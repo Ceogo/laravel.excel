@@ -2,6 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Module;
+use App\Models\SemesterDistribution;
+use App\Models\RupDetail;
+use App\Models\AcademicYearDetail;
+use App\Models\SemesterDetail;
+use App\Models\YearTotal;
 use Illuminate\Http\Request;
 
 class DocumentController extends Controller
@@ -10,8 +16,6 @@ class DocumentController extends Controller
         '1. Индекс Модуля',
         '2. Наименование дисциплины',
         '3. ФИО преподавателя',
-
-        // Раздел 4
         [
             'title' => '4. Распределение по семестрам',
             'children' => [
@@ -21,8 +25,6 @@ class DocumentController extends Controller
                 '4.4 контрольные работы'
             ]
         ],
-
-        // Раздел 5
         [
             'title' => '5. По РУП',
             'children' => [
@@ -34,8 +36,6 @@ class DocumentController extends Controller
                 '5.6 Произв-ое обуч-ие Проф-ая практика'
             ]
         ],
-
-        // Раздел 6
         [
             'title' => '6. На текущий учебный год',
             'children' => [
@@ -46,8 +46,6 @@ class DocumentController extends Controller
                 '6.5 Производственное обучение'
             ]
         ],
-
-        // Раздел 7
         [
             'title' => '7. 3 семестр',
             'children' => [
@@ -72,8 +70,6 @@ class DocumentController extends Controller
                 '7.12 итого за 1 семестр'
             ]
         ],
-
-        // Раздел 8
         [
             'title' => '8. 4 семестр',
             'children' => [
@@ -98,16 +94,13 @@ class DocumentController extends Controller
                 '8.12 итого за 2 семестр'
             ]
         ],
-
         '9. Итого за год'
     ];
 
     public function index(Request $request)
     {
         $file = $request->file('file');
-
         $csvData = file_get_contents($file->getPathName());
-
         $rows = array_map(function($row) {
             return str_getcsv($row, ';');
         }, explode("\n", $csvData));
@@ -117,32 +110,111 @@ class DocumentController extends Controller
 
         foreach ($rows as $row) {
             $trimmedRow = array_map('trim', $row);
-
             if (!$dataStarted && isset($trimmedRow[0]) && str_starts_with($trimmedRow[0], 'БМ')) {
                 $dataStarted = true;
-                $headersRow = $trimmedRow;
                 continue;
             }
-
             if ($dataStarted && !empty(array_filter($trimmedRow))) {
                 $filteredRows[] = $trimmedRow;
             }
         }
 
         $flattenedHeaders = $this->flattenHeaders($this->headerStructure);
-        $data = [];
 
         foreach ($filteredRows as $row) {
             $dataRow = [];
             foreach ($flattenedHeaders as $index => $header) {
                 $dataRow[$header] = $row[$index] ?? '-';
             }
-            $data[] = $dataRow;
+
+            // Save to database
+            $module = Module::create([
+                'index' => $dataRow['1. Индекс Модуля'],
+                'discipline_name' => $dataRow['2. Наименование дисциплины'],
+                'teacher_name' => $dataRow['3. ФИО преподавателя'],
+            ]);
+
+            SemesterDistribution::create([
+                'module_id' => $module->id,
+                'exams' => $dataRow['4.1 экзамены'] !== '-' ? (int)$dataRow['4.1 экзамены'] : null,
+                'credits' => $dataRow['4.2 зачеты'] !== '-' ? (int)$dataRow['4.2 зачеты'] : null,
+                'course_works' => $dataRow['4.3 курсовые работы'] !== '-' ? (int)$dataRow['4.3 курсовые работы'] : null,
+                'control_works' => $dataRow['4.4 контрольные работы'] !== '-' ? (int)$dataRow['4.4 контрольные работы'] : null,
+            ]);
+
+            RupDetail::create([
+                'module_id' => $module->id,
+                'credits' => $dataRow['5.1 Кредиты'] !== '-' ? (float)$dataRow['5.1 Кредиты'] : null,
+                'total_hours' => $dataRow['5.2 Всего часов'] !== '-' ? (int)$dataRow['5.2 Всего часов'] : null,
+                'theoretical_hours' => $dataRow['5.3 Теоретические занятия'] !== '-' ? (int)$dataRow['5.3 Теоретические занятия'] : null,
+                'lab_practical_hours' => $dataRow['5.4 Лабораторно-практические занятия'] !== '-' ? (int)$dataRow['5.4 Лабораторно-практические занятия'] : null,
+                'course_works' => $dataRow['5.5 Курсовые работы'] !== '-' ? (int)$dataRow['5.5 Курсовые работы'] : null,
+                'professional_practice' => $dataRow['5.6 Произв-ое обуч-ие Проф-ая практика'] !== '-' ? (int)$dataRow['5.6 Произв-ое обуч-ие Проф-ая практика'] : null,
+            ]);
+
+            AcademicYearDetail::create([
+                'module_id' => $module->id,
+                'total_hours' => $dataRow['6.1 Всего часов'] !== '-' ? (int)$dataRow['6.1 Всего часов'] : null,
+                'theoretical_hours' => $dataRow['6.2 Из них теоретических'] !== '-' ? (int)$dataRow['6.2 Из них теоретических'] : null,
+                'lab_practical_hours' => $dataRow['6.3 Из них ЛПР'] !== '-' ? (int)$dataRow['6.3 Из них ЛПР'] : null,
+                'course_works' => $dataRow['6.4 Из них курсовые работы'] !== '-' ? (int)$dataRow['6.4 Из них курсовые работы'] : null,
+                'professional_training' => $dataRow['6.5 Производственное обучение'] !== '-' ? (int)$dataRow['6.5 Производственное обучение'] : null,
+            ]);
+
+            // 3rd Semester
+            SemesterDetail::create([
+                'module_id' => $module->id,
+                'semester_number' => 3,
+                'weeks_count' => $dataRow['7.1 кол-во недель'] !== '-' ? (int)$dataRow['7.1 кол-во недель'] : null,
+                'hours_per_week' => $dataRow['7.2 часов в неделю'] !== '-' ? (int)$dataRow['7.2 часов в неделю'] : null,
+                'total_hours' => $dataRow['7.3 всего часов'] !== '-' ? (int)$dataRow['7.3 всего часов'] : null,
+                'theoretical_hours' => $dataRow['7.4 из них теоретических'] !== '-' ? (int)$dataRow['7.4 из них теоретических'] : null,
+                'lab_practical_hours' => $dataRow['7.5 из них ЛПР'] !== '-' ? (int)$dataRow['7.5 из них ЛПР'] : null,
+                'course_projects' => $dataRow['7.6 из них КР/КП'] !== '-' ? (int)$dataRow['7.6 из них КР/КП'] : null,
+                'project_verification' => $dataRow['7.7 проверка КП/КР'] !== '-' ? (int)$dataRow['7.7 проверка КП/КР'] : null,
+                'professional_training' => $dataRow['7.8 Производственное обучение'] !== '-' ? (int)$dataRow['7.8 Производственное обучение'] : null,
+                'lab_practical_duplication' => $dataRow['7.9.1 ЛПР'] !== '-' ? (int)$dataRow['7.9.1 ЛПР'] : null,
+                'project_duplication' => $dataRow['7.9.2 КП/КП'] !== '-' ? (int)$dataRow['7.9.2 КП/КП'] : null,
+                'verification_duplication' => $dataRow['7.9.3 проверка КР/КП'] !== '-' ? (int)$dataRow['7.9.3 проверка КР/КП'] : null,
+                'consultations' => $dataRow['7.10 консультации'] !== '-' ? (int)$dataRow['7.10 консультации'] : null,
+                'exams' => $dataRow['7.11 экзамены'] !== '-' ? (int)$dataRow['7.11 экзамены'] : null,
+                'semester_total' => $dataRow['7.12 итого за 1 семестр'] !== '-' ? (int)$dataRow['7.12 итого за 1 семестр'] : null,
+            ]);
+
+            // 4th Semester
+            SemesterDetail::create([
+                'module_id' => $module->id,
+                'semester_number' => 4,
+                'weeks_count' => $dataRow['8.1 кол-во недель'] !== '-' ? (int)$dataRow['8.1 кол-во недель'] : null,
+                'hours_per_week' => $dataRow['8.2 часов в неделю'] !== '-' ? (int)$dataRow['8.2 часов в неделю'] : null,
+                'total_hours' => $dataRow['8.3 всего часов'] !== '-' ? (int)$dataRow['8.3 всего часов'] : null,
+                'theoretical_hours' => $dataRow['8.4 из них теоретических'] !== '-' ? (int)$dataRow['8.4 из них теоретических'] : null,
+                'lab_practical_hours' => $dataRow['8.5 из них ЛПР'] !== '-' ? (int)$dataRow['8.5 из них ЛПР'] : null,
+                'course_projects' => $dataRow['8.6 из них КР/КП'] !== '-' ? (int)$dataRow['8.6 из них КР/КП'] : null,
+                'project_verification' => $dataRow['8.7 проверка КП/КР'] !== '-' ? (int)$dataRow['8.7 проверка КП/КР'] : null,
+                'professional_training' => $dataRow['8.8 Производственное обучение'] !== '-' ? (int)$dataRow['8.8 Производственное обучение'] : null,
+                'lab_practical_duplication' => $dataRow['8.9.1 ЛПР'] !== '-' ? (int)$dataRow['8.9.1 ЛПР'] : null,
+                'project_duplication' => $dataRow['8.9.2 КП/КП'] !== '-' ? (int)$dataRow['8.9.2 КП/КП'] : null,
+                'verification_duplication' => $dataRow['8.9.3 проверка КР/КП'] !== '-' ? (int)$dataRow['8.9.3 проверка КР/КП'] : null,
+                'consultations' => $dataRow['8.10 консультации'] !== '-' ? (int)$dataRow['8.10 консультации'] : null,
+                'exams' => $dataRow['8.11 экзамены'] !== '-' ? (int)$dataRow['8.11 экзамены'] : null,
+                'semester_total' => $dataRow['8.12 итого за 2 семестр'] !== '-' ? (int)$dataRow['8.12 итого за 2 семестр'] : null,
+            ]);
+
+            YearTotal::create([
+                'module_id' => $module->id,
+                'total_hours' => $dataRow['9. Итого за год'] !== '-' ? (int)$dataRow['9. Итого за год'] : null,
+            ]);
         }
 
-
         return view('document', [
-            'data' => $data,
+            'data' => Module::with([
+                'semesterDistribution',
+                'rupDetail',
+                'academicYearDetail',
+                'semesterDetails',
+                'yearTotal'
+            ])->get(),
             'headers' => $this->headerStructure,
             'flattenedHeaders' => $flattenedHeaders,
             'headerRows' => $this->buildHeaderRows($this->headerStructure)

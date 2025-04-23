@@ -1,16 +1,14 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SemesterDistribution extends Model
 {
-    protected $fillable = ['module_id', 'exams', 'credits', 'course_works', 'control_works'];
+    protected $fillable = ['learning_outcome_id', 'exams', 'credits', 'course_works', 'control_works'];
 
-    public function module(): BelongsTo
+    public function learningOutcome()
     {
-        return $this->belongsTo(Module::class);
+        return $this->belongsTo(LearningOutcome::class);
     }
 }

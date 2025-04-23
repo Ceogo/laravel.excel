@@ -1,37 +1,19 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Module extends Model
 {
-    protected $fillable = ['index', 'discipline_name', 'teacher_name'];
+    protected $fillable = ['group_id', 'index', 'name'];
 
-    public function semesterDistribution(): HasOne
+    public function group()
     {
-        return $this->hasOne(SemesterDistribution::class);
+        return $this->belongsTo(Group::class);
     }
 
-    public function rupDetail(): HasOne
+    public function learningOutcomes()
     {
-        return $this->hasOne(RupDetail::class);
-    }
-
-    public function academicYearDetail(): HasOne
-    {
-        return $this->hasOne(AcademicYearDetail::class);
-    }
-
-    public function semesterDetails(): HasMany
-    {
-        return $this->hasMany(SemesterDetail::class);
-    }
-
-    public function yearTotal(): HasOne
-    {
-        return $this->hasOne(YearTotal::class);
+        return $this->hasMany(LearningOutcome::class);
     }
 }

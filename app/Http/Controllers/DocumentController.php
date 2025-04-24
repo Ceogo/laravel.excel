@@ -347,7 +347,6 @@ class DocumentController extends Controller
         ])->get();
         $flattenedHeaders = $this->flattenHeaders($this->headerStructure);
 
-        // Подготовим массив с количеством дочерних заголовков для каждой группы
         $headerCounts = [];
         foreach ($this->headerStructure as $header) {
             if (is_array($header)) {

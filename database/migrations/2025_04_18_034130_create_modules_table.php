@@ -76,6 +76,7 @@ return new class extends Migration
             $table->integer('consultations')->nullable();
             $table->integer('exams')->nullable();
             $table->integer('semester_total')->nullable();
+            $table->integer('remaining_hours')->nullable();
             $table->timestamps();
         });
 

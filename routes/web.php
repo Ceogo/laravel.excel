@@ -16,4 +16,4 @@ Route::post('/save-data', [DocumentController::class, 'saveData'])->name('save_d
 Route::get('/document', [DocumentController::class, 'showDocument'])->name('document');
 Route::get('/schedule', [ScheduleController::class, 'show'])->name('schedule');
 Route::get('/schedule/edit/{scheduleId}', [ScheduleController::class, 'editSchedule'])->name('schedule.edit');
-Route::post('/schedule/edit/{scheduleId}', [ScheduleController::class, 'editSchedule']);    
+Route::post('/schedule/edit/{scheduleId}', [ScheduleController::class, 'editSchedule']);

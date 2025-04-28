@@ -233,4 +233,76 @@ class ScheduleController extends Controller
 
         return $conflicts;
     }
+    public function swapSchedules(Request $request)
+    {
+        $source = $request->input('source');
+        $target = $request->input('target');
+        $groupId = $request->input('group_id');
+        $semester = $request->input('semester');
+        $week = $request->input('week');
+
+        $sourceSchedule = Schedule::where('group_id', $groupId)
+            ->where('semester', $semester)
+            ->where('week', $week)
+            ->where('day', $source['day'])
+            ->where('pair_number', $source['pair'])
+            ->first();
+
+        $targetSchedule = Schedule::where('group_id', $groupId)
+            ->where('semester', $semester)
+            ->where('week', $week)
+            ->where('day', $target['day'])
+            ->where('pair_number', $target['pair'])
+            ->first();
+
+        if (!$sourceSchedule || !$targetSchedule) {
+            return response()->json(['success' => false, 'message' => 'Одна из пар не найдена']);
+        }
+
+        $temp = $sourceSchedule->learning_outcome_id;
+        $sourceSchedule->learning_outcome_id = $targetSchedule->learning_outcome_id;
+        $targetSchedule->learning_outcome_id = $temp;
+
+        $sourceSchedule->save();
+        $targetSchedule->save();
+
+        $group = Group::find($groupId);
+        $weekSchedule = $this->generateScheduleArray($group, $semester, $week); // Новый метод, см. ниже
+        $conflicts = $this->checkScheduleConflicts($weekSchedule, $semester, $week);
+
+        if (!empty($conflicts)) {
+            $sourceSchedule->learning_outcome_id = $temp;
+            $targetSchedule->learning_outcome_id = $sourceSchedule->learning_outcome_id;
+            $sourceSchedule->save();
+            $targetSchedule->save();
+            return response()->json(['success' => false, 'message' => implode(', ', $conflicts)]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    private function generateScheduleArray($group, $semester, $week)
+    {
+        return Schedule::with(['learningOutcome.module'])
+            ->where('group_id', $group->id)
+            ->where('semester', $semester)
+            ->where('week', $week)
+            ->get()
+            ->groupBy('day')
+            ->map(function ($daySchedules) {
+                return $daySchedules->mapWithKeys(function ($item) {
+                    $moduleIndex = $item->learningOutcome && $item->learningOutcome->module
+                        ? $item->learningOutcome->module->index
+                        : 'Не указан модуль';
+
+                    return [$item->pair_number => [
+                        'module_index' => $moduleIndex,
+                        'discipline_name' => $item->learningOutcome ? $item->learningOutcome->discipline_name : 'Не указана дисциплина',
+                        'teacher_name' => $item->learningOutcome ? ($item->learningOutcome->teacher_name ?? 'вакансия') : 'вакансия',
+                        'type' => $item->type,
+                        'id' => $item->id,
+                    ]];
+                })->all();
+            })->toArray();
+    }
 }

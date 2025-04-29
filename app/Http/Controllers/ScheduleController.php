@@ -124,9 +124,8 @@ class ScheduleController extends Controller
                         $pairNumber++;
                         break;
                     } else {
-                        // Если есть конфликт, пробуем следующую пару
                         $pairNumber++;
-                        if ($pairNumber > 4) break; // Максимум 4 пары
+                        if ($pairNumber > 4) break;
                     }
                 }
             }

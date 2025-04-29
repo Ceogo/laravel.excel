@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\V1\ShowController;
 use App\Http\Controllers\V1\UserController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\V1\ApiSchedule;
 use App\Http\Controllers\V1\StatsController;
 use App\Http\Controllers\V1\TeacherStatsController;
 use App\Http\Controllers\V1\LearningOutcomeController;
@@ -34,3 +35,5 @@ Route::post('/users', [UserController::class, 'store'])->middleware('auth:sanctu
 
 // Stats
 Route::get('/stats', [StatsController::class, 'index'])->middleware('auth:sanctum');
+
+Route::get('/dev', [ApiSchedule::class, 'generate']);

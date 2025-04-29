@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('learning_outcome_id')->constrained();
             $table->foreignId('group_id')->constrained();
-            $table->integer('target_week');
+            $table->integer('target_week')->nullable();
             $table->boolean('is_processed')->default(false);
             $table->timestamps();
 

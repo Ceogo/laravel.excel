@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CabinetController;
+use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ScheduleController;
 
@@ -15,3 +17,5 @@ Route::get('/schedule', [ScheduleController::class, 'show'])->name('schedule');
 Route::get('/schedule/edit/{scheduleId}', [ScheduleController::class, 'editSchedule'])->name('schedule.edit');
 Route::post('/schedule/edit/{scheduleId}', [ScheduleController::class, 'editSchedule']);
 Route::post('/schedule/swap', [ScheduleController::class, 'swapSchedules'])->name('schedule.swap');
+Route::resource('teachers', TeacherController::class)->only(['index', 'create', 'store', 'destroy']);
+Route::resource('cabinets', CabinetController::class)->only(['index', 'create', 'store', 'destroy']);

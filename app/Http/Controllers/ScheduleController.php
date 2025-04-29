@@ -18,7 +18,7 @@ class ScheduleController extends Controller
 
         if (!$groupId) {
             $groups = Group::all();
-            return view('select_group', compact('groups', 'semester', 'week'));
+            return view('schedule.select', compact('groups', 'semester', 'week'));
         }
 
         $group = Group::findOrFail($groupId);
@@ -73,7 +73,7 @@ class ScheduleController extends Controller
 
         $groups = Group::all();
 
-        return view('schedule', compact('schedule', 'group', 'groups', 'semester', 'week', 'bellSchedule'));
+        return view('schedule.index', compact('schedule', 'group', 'groups', 'semester', 'week', 'bellSchedule'));
     }
 
     private function generateSchedule($group, $semester, $week, $bellSchedule)

@@ -19,4 +19,13 @@ class Schedule extends Model
     {
         return $this->belongsTo(LearningOutcome::class);
     }
+    public function teacher()
+    {
+        return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    public function cabinet()
+    {
+        return $this->belongsTo(Cabinet::class, 'cabinet_id');
+    }
 }

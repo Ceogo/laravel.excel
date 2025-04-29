@@ -5,7 +5,7 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ScheduleController;
 
 Route::get('/upload', function () {
-    return view('upload');
+    return view('document.upload');
 });
 Route::post('/upload', [DocumentController::class, 'index'])->name('upload');
 Route::get('/edit-data', [DocumentController::class, 'editData'])->name('edit_data');

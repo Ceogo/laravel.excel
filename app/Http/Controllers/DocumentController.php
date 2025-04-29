@@ -182,7 +182,7 @@ class DocumentController extends Controller
             return redirect()->route('upload')->withErrors(['msg' => 'Данные для редактирования отсутствуют. Пожалуйста, загрузите файл заново.']);
         }
 
-        return view('edit_data', [
+        return view('document.edit', [
             'data' => $csvData,
             'headers' => $flattenedHeaders,
         ]);
@@ -354,7 +354,7 @@ class DocumentController extends Controller
             }
         }
 
-        return view('document', [
+        return view('document.index', [
             'groups' => $groups,
             'headers' => $this->headerStructure,
             'flattenedHeaders' => $flattenedHeaders,

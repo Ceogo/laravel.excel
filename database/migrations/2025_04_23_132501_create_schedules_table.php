@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('type'); // 'theoretical', 'lab_practical', 'course_project'
             $table->integer('week'); // Номер недели в семестре
             $table->integer('semester'); // Номер семестра
+            $table->foreignId('teacher_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('cabinet_id')->nullable()->constrained('cabinets')->onDelete('set null');
             $table->timestamps();
         });
     }
